@@ -2,92 +2,69 @@ import AppKit
 import SwiftUI
 
 public struct CompactWingsView: View {
-    @ObservedObject var mediaViewModel: MediaViewModel
     @ObservedObject var aiUsageViewModel: AIUsageViewModel
     @ObservedObject var utilitiesViewModel: UtilitiesViewModel
     let hardwareNotchWidth: CGFloat
 
     public init(
-        mediaViewModel: MediaViewModel,
         aiUsageViewModel: AIUsageViewModel,
         utilitiesViewModel: UtilitiesViewModel,
         hardwareNotchWidth: CGFloat
     ) {
-        self.mediaViewModel = mediaViewModel
         self.aiUsageViewModel = aiUsageViewModel
         self.utilitiesViewModel = utilitiesViewModel
         self.hardwareNotchWidth = hardwareNotchWidth
     }
 
     public var body: some View {
+        let timerAccent = utilitiesViewModel.currentPhase.accentColor
+
         HStack(spacing: 0) {
-            // Left Wing: Miniature Album Artwork + Playback Indicator
+            // Left Wing: Animated Mini Pomodoro Progress Ring & Countdown
             HStack(spacing: 6) {
-                if let artwork = mediaViewModel.artwork {
-                    Image(nsImage: artwork)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 20, height: 20)
-                        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.18), lineWidth: 2.2)
+                        .frame(width: 15, height: 15)
+
+                    Circle()
+                        .trim(from: 0.0, to: CGFloat(utilitiesViewModel.remainingFraction))
+                        .stroke(
+                            timerAccent,
+                            style: StrokeStyle(lineWidth: 2.2, lineCap: .round)
                         )
-                } else {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.indigo.gradient)
-                        .frame(width: 20, height: 20)
-                        .overlay(
-                            Image(systemName: "music.note")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                        )
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 15, height: 15)
                 }
 
-                Text(mediaViewModel.track.title)
-                    .font(.system(size: 10.5, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.88))
+                Text(utilitiesViewModel.formattedTimer)
+                    .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(utilitiesViewModel.isTimerRunning ? timerAccent : .white.opacity(0.88))
+                    .contentTransition(.numericText(countsDown: true))
                     .lineLimit(1)
-                    .frame(maxWidth: 44, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 10)
+            .padding(.leading, 11)
 
             // Center Spacer matching the exact physical camera cutout width
             Spacer(minLength: hardwareNotchWidth)
 
-            // Right Wing: AI Quota Badge + Active Pomodoro Timer or Animated Audio Equalizer Waveform
-            HStack(spacing: 7) {
-                HStack(spacing: 3) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.cyan)
-                    Text("\(aiUsageViewModel.averageRemainingPercentInt)%")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.88))
-                }
+            // Right Wing: Live Synced AI Quota Percentage & Connected Account Indicator
+            HStack(spacing: 5) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundStyle(.cyan)
 
-                if utilitiesViewModel.isTimerRunning {
-                    HStack(spacing: 3) {
-                        Circle()
-                            .fill(Color.orange)
-                            .frame(width: 5, height: 5)
-                        Text(utilitiesViewModel.formattedTimer)
-                            .font(.system(size: 10.5, weight: .bold, design: .monospaced))
-                            .foregroundStyle(Color.orange)
-                    }
-                } else {
-                    EqualizerWaveView(
-                        levels: mediaViewModel.equalizerLevels,
-                        isPlaying: mediaViewModel.track.isPlaying,
-                        accentColor: Color(nsColor: NSColor(hex: mediaViewModel.track.accentHex) ?? .systemIndigo),
-                        barWidth: 2.2,
-                        maxBarHeight: 13.0
-                    )
-                }
+                Text("\(aiUsageViewModel.averageRemainingPercentInt)%")
+                    .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                Circle()
+                    .fill(aiUsageViewModel.authenticatedCount > 0 ? Color.green : Color.orange)
+                    .frame(width: 5, height: 5)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, 10)
+            .padding(.trailing, 11)
         }
         .frame(maxHeight: .infinity)
     }

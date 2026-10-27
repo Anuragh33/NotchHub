@@ -13,7 +13,7 @@ public struct AIUsageView: View {
         let selectedColor = Color(nsColor: NSColor(hex: selected.provider.accentHex) ?? .systemBlue)
 
         VStack(alignment: .leading, spacing: 8) {
-            // Top Row: 5 Provider Cards (Gemini, Claude, ChatGPT, OpenCode, Ollama)
+            // Top Row: 5 Real System-Synced Provider Cards (Gemini, Claude, ChatGPT, OpenCode, Ollama)
             HStack(spacing: 8) {
                 ForEach(viewModel.providers) { item in
                     AIProviderCompactCard(
@@ -28,99 +28,86 @@ public struct AIUsageView: View {
                 }
             }
 
-            // Bottom Detail & Interactive Quota Bar for Selected Provider
-            HStack(spacing: 12) {
+            // Bottom Detail Strip: Real-Time Account Telemetry + Sign In / Sync Actions
+            HStack(spacing: 10) {
                 HStack(spacing: 7) {
                     Circle()
-                        .fill(selected.isOnline ? Color.green : Color.orange)
-                        .frame(width: 6, height: 6)
+                        .fill(selected.isAuthenticated ? Color.green : Color.orange)
+                        .frame(width: 7, height: 7)
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("\(selected.provider.rawValue) • \(selected.planName)")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 1.5) {
+                        HStack(spacing: 5) {
+                            Text(selected.planName)
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+
+                            if selected.needsSignIn {
+                                Text("Needs Auth")
+                                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1)
+                                    .background(Capsule().fill(Color.orange))
+                            }
+                        }
 
                         Text("\(selected.remainingUnits)/\(selected.totalUnits) \(selected.unitLabel) left • \(selected.resetDescription)")
                             .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.white.opacity(0.62))
                             .lineLimit(1)
                     }
                 }
-                .frame(width: 195, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Interactive Remaining Quota Scrubber
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.14))
-                            .frame(height: 7)
-
-                        Capsule(style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [selectedColor, selectedColor.opacity(0.7)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(
-                                width: max(6.0, geo.size.width * selected.remainingPercent),
-                                height: 7
-                            )
+                // Sign In / Connect Account Button
+                Button(action: {
+                    viewModel.openSignInWindow(for: selected.provider)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: selected.needsSignIn ? "person.crop.circle.badge.exclamationmark" : "person.crop.circle.badge.checkmark")
+                            .font(.system(size: 10.5, weight: .semibold))
+                        Text(selected.needsSignIn ? "Sign In" : "Account")
+                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
                     }
-                    .frame(maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                let fraction = min(max(value.location.x / max(1, geo.size.width), 0.0), 1.0)
-                                viewModel.setRemainingFraction(for: selected.provider, remainingFraction: fraction)
-                            }
+                    .foregroundStyle(selected.needsSignIn ? .black : .white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(selected.needsSignIn ? selectedColor : Color.white.opacity(0.14))
                     )
                 }
-                .frame(height: 18)
+                .buttonStyle(.plain)
+                .help("Sign in or manage \(selected.provider.rawValue) account credentials")
 
-                // Quick Action Buttons (-1, +1 used, Reset / Refresh)
-                HStack(spacing: 5) {
-                    Button(action: { viewModel.recordUsage(for: selected.provider, delta: 1) }) {
-                        Text("-1")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.85))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Capsule().fill(Color.white.opacity(0.12)))
+                // Live Sync Button
+                Button(action: {
+                    Task { await viewModel.refreshLiveStatuses() }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 10, weight: .bold))
+                            .rotationEffect(.degrees(viewModel.isSyncing ? 360 : 0))
+                            .animation(
+                                viewModel.isSyncing
+                                    ? .linear(duration: 0.8).repeatForever(autoreverses: false)
+                                    : .default,
+                                value: viewModel.isSyncing
+                            )
+                        Text("Sync")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
                     }
-                    .buttonStyle(.plain)
-                    .help("Log 1 prompt used (decrease remaining)")
-
-                    Button(action: { viewModel.recordUsage(for: selected.provider, delta: -1) }) {
-                        Text("+1")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.85))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Capsule().fill(Color.white.opacity(0.12)))
-                    }
-                    .buttonStyle(.plain)
-                    .help("Restore 1 prompt")
-
-                    Button(action: {
-                        if selected.provider == .ollama {
-                            Task { await viewModel.refreshLiveStatuses() }
-                        } else {
-                            viewModel.resetQuota(for: selected.provider)
-                        }
-                    }) {
-                        Image(systemName: selected.provider == .ollama ? "arrow.clockwise" : "bolt.fill")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(selectedColor)
-                            .frame(width: 22, height: 20)
-                            .background(Capsule().fill(selectedColor.opacity(0.18)))
-                    }
-                    .buttonStyle(.plain)
-                    .help(selected.provider == .ollama ? "Probe Local Ollama Server" : "Reset Remaining Quota to 100%")
+                    .foregroundStyle(selectedColor)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(selectedColor.opacity(0.18))
+                    )
                 }
+                .buttonStyle(.plain)
+                .help("Re-sync real-time usage from system accounts and APIs")
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -161,16 +148,26 @@ private struct AIProviderCompactCard: View {
                         .lineLimit(1)
 
                     Spacer(minLength: 0)
+
+                    Circle()
+                        .fill(item.isAuthenticated ? Color.green : Color.orange)
+                        .frame(width: 5, height: 5)
                 }
 
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text("\(item.remainingPercentInt)%")
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
+                if item.needsSignIn {
+                    Text("Sign In")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.orange)
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(item.remainingPercentInt)%")
+                            .font(.system(size: 14, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
 
-                    Text("left")
-                        .font(.system(size: 9, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.55))
+                        Text("left")
+                            .font(.system(size: 9, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
                 }
 
                 // Mini Progress Bar
@@ -181,8 +178,11 @@ private struct AIProviderCompactCard: View {
                             .frame(height: 4)
 
                         Capsule(style: .continuous)
-                            .fill(accentColor)
-                            .frame(width: max(4.0, geo.size.width * item.remainingPercent), height: 4)
+                            .fill(item.needsSignIn ? Color.orange.opacity(0.6) : accentColor)
+                            .frame(
+                                width: max(4.0, geo.size.width * (item.needsSignIn ? 0.25 : item.remainingPercent)),
+                                height: 4
+                            )
                     }
                 }
                 .frame(height: 4)

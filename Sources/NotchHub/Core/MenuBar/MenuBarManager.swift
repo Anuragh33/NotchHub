@@ -63,22 +63,22 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     private func rebuildMenu(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let headerItem = NSMenuItem(title: "NotchHub — Dynamic Island & AI Quotas", action: nil, keyEquivalent: "")
+        let headerItem = NSMenuItem(title: "NotchHub — AI Quotas, Pomodoro & Shelf", action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
         menu.addItem(headerItem)
 
         menu.addItem(.separator())
 
         // Section 1: Open Notch Tabs
-        let openMedia = NSMenuItem(title: "Open Media Controller", action: #selector(openMediaTab), keyEquivalent: "1")
-        openMedia.target = self
-        openMedia.image = NSImage(systemSymbolName: "waveform.circle.fill", accessibilityDescription: nil)
-        menu.addItem(openMedia)
-
-        let openAI = NSMenuItem(title: "Open AI Subscription Quotas", action: #selector(openAITab), keyEquivalent: "2")
+        let openAI = NSMenuItem(title: "Open AI Subscription Quotas", action: #selector(openAITab), keyEquivalent: "1")
         openAI.target = self
         openAI.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil)
         menu.addItem(openAI)
+
+        let openTimer = NSMenuItem(title: "Open Animated Pomodoro Timer", action: #selector(openTimerTab), keyEquivalent: "2")
+        openTimer.target = self
+        openTimer.image = NSImage(systemSymbolName: "timer", accessibilityDescription: nil)
+        menu.addItem(openTimer)
 
         let openShelf = NSMenuItem(title: "Open File Drop Shelf", action: #selector(openShelfTab), keyEquivalent: "3")
         openShelf.target = self
@@ -87,13 +87,16 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        // Section 2: Live AI Subscription Remaining Usage
-        let aiHeader = NSMenuItem(title: "AI Subscription Remaining Usage", action: nil, keyEquivalent: "")
+        // Section 2: Real-Time Synced AI Subscription Usage
+        let aiHeader = NSMenuItem(title: "Synced System AI Accounts", action: nil, keyEquivalent: "")
         aiHeader.isEnabled = false
         menu.addItem(aiHeader)
 
         for usage in notchViewModel.aiUsageViewModel.providers {
-            let title = "\(usage.provider.rawValue): \(usage.remainingPercentInt)% remaining (\(usage.remainingUnits)/\(usage.totalUnits) \(usage.unitLabel))"
+            let statusStr = usage.needsSignIn
+                ? "Sign In Required — Click to Connect"
+                : "\(usage.remainingPercentInt)% remaining • \(usage.planName)"
+            let title = "\(usage.provider.rawValue): \(statusStr)"
             let item = NSMenuItem(title: title, action: #selector(selectAIProviderFromMenu(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = usage.provider.rawValue
@@ -101,14 +104,14 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
             menu.addItem(item)
         }
 
-        let refreshAI = NSMenuItem(title: "Refresh Ollama & AI Quotas", action: #selector(refreshAIQuotas), keyEquivalent: "r")
+        let refreshAI = NSMenuItem(title: "Sync All AI Accounts Now", action: #selector(refreshAIQuotas), keyEquivalent: "r")
         refreshAI.target = self
-        refreshAI.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
+        refreshAI.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
         menu.addItem(refreshAI)
 
         menu.addItem(.separator())
 
-        // Section 3: Appearance & Menu Bar Icon Toggle
+        // Section 3: Settings (Compact Wings & Menu Bar Icon Toggle)
         let toggleWings = NSMenuItem(
             title: notchViewModel.isCompactWingsEnabled ? "Disable Compact Wings" : "Enable Compact Wings",
             action: #selector(toggleCompactWings),
@@ -119,7 +122,7 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(toggleWings)
 
         let toggleMenuBar = NSMenuItem(
-            title: "Show Menu Bar Icon (Re-enable inside Notch)",
+            title: "Show Menu Bar Icon (Re-enable in Notch Settings)",
             action: #selector(toggleMenuBarIconVisibility),
             keyEquivalent: "m"
         )
@@ -134,12 +137,12 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(quitItem)
     }
 
-    @objc private func openMediaTab() {
-        notchViewModel.expandImmediately(to: .media)
-    }
-
     @objc private func openAITab() {
         notchViewModel.expandImmediately(to: .aiUsage)
+    }
+
+    @objc private func openTimerTab() {
+        notchViewModel.expandImmediately(to: .timer)
     }
 
     @objc private func openShelfTab() {
@@ -147,11 +150,15 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     }
 
     @objc private func selectAIProviderFromMenu(_ sender: NSMenuItem) {
-        if let raw = sender.representedObject as? String,
-           let provider = AIProviderType(rawValue: raw) {
-            notchViewModel.aiUsageViewModel.selectedProvider = provider
+        guard let raw = sender.representedObject as? String,
+              let provider = AIProviderType(rawValue: raw) else { return }
+        notchViewModel.aiUsageViewModel.selectedProvider = provider
+        if let usage = notchViewModel.aiUsageViewModel.providers.first(where: { $0.provider == provider }),
+           usage.needsSignIn {
+            notchViewModel.aiUsageViewModel.openSignInWindow(for: provider)
+        } else {
+            notchViewModel.expandImmediately(to: .aiUsage)
         }
-        notchViewModel.expandImmediately(to: .aiUsage)
     }
 
     @objc private func refreshAIQuotas() {

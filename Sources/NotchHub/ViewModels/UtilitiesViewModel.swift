@@ -1,12 +1,47 @@
 import AppKit
 import Combine
 import Foundation
+import SwiftUI
+
+public enum PomodoroPhase: String, CaseIterable, Identifiable, Sendable {
+    case focus = "Focus"
+    case shortBreak = "Short Break"
+    case longBreak = "Long Break"
+
+    public var id: String { rawValue }
+
+    public var defaultMinutes: Int {
+        switch self {
+        case .focus: return 25
+        case .shortBreak: return 5
+        case .longBreak: return 15
+        }
+    }
+
+    public var symbolName: String {
+        switch self {
+        case .focus: return "flame.fill"
+        case .shortBreak: return "cup.and.saucer.fill"
+        case .longBreak: return "leaf.fill"
+        }
+    }
+
+    public var accentColor: Color {
+        switch self {
+        case .focus: return Color(red: 1.0, green: 0.45, blue: 0.22)
+        case .shortBreak: return Color(red: 0.16, green: 0.84, blue: 0.62)
+        case .longBreak: return Color(red: 0.24, green: 0.64, blue: 0.98)
+        }
+    }
+}
 
 @MainActor
 public final class UtilitiesViewModel: ObservableObject {
+    @Published public private(set) var currentPhase: PomodoroPhase = .focus
     @Published public private(set) var remainingSeconds: Int = 25 * 60
     @Published public private(set) var totalSeconds: Int = 25 * 60
     @Published public private(set) var isTimerRunning: Bool = false
+    @Published public private(set) var completedPomodoros: Int = 0
     @Published public var scratchpadText: String {
         didSet {
             UserDefaults.standard.set(scratchpadText, forKey: Self.scratchpadStorageKey)
@@ -31,6 +66,18 @@ public final class UtilitiesViewModel: ObservableObject {
         return 1.0 - (Double(remainingSeconds) / Double(totalSeconds))
     }
 
+    public var remainingFraction: Double {
+        guard totalSeconds > 0 else { return 1 }
+        return Double(remainingSeconds) / Double(totalSeconds)
+    }
+
+    public func selectPhase(_ phase: PomodoroPhase) {
+        pauseTimer()
+        currentPhase = phase
+        totalSeconds = phase.defaultMinutes * 60
+        remainingSeconds = totalSeconds
+    }
+
     public func toggleTimer() {
         if isTimerRunning {
             pauseTimer()
@@ -52,8 +99,7 @@ public final class UtilitiesViewModel: ObservableObject {
                 if self.remainingSeconds > 0 {
                     self.remainingSeconds -= 1
                 } else {
-                    self.pauseTimer()
-                    NSSound.beep()
+                    self.handlePhaseCompleted()
                 }
             }
         }
@@ -65,10 +111,37 @@ public final class UtilitiesViewModel: ObservableObject {
         countdownTimer = nil
     }
 
-    public func resetTimer(minutes: Int = 25) {
+    public func resetTimer(minutes: Int? = nil) {
         pauseTimer()
-        totalSeconds = max(1, minutes * 60)
+        let mins = minutes ?? currentPhase.defaultMinutes
+        totalSeconds = max(60, mins * 60)
         remainingSeconds = totalSeconds
+    }
+
+    public func adjustDuration(byMinutes delta: Int) {
+        let newTotal = max(60, min(120 * 60, totalSeconds + delta * 60))
+        let newRemaining = max(60, min(newTotal, remainingSeconds + delta * 60))
+        totalSeconds = newTotal
+        remainingSeconds = newRemaining
+    }
+
+    public func skipToNextPhase() {
+        handlePhaseCompleted()
+    }
+
+    private func handlePhaseCompleted() {
+        pauseTimer()
+        NSSound.beep()
+        if currentPhase == .focus {
+            completedPomodoros += 1
+            if completedPomodoros % 4 == 0 {
+                selectPhase(.longBreak)
+            } else {
+                selectPhase(.shortBreak)
+            }
+        } else {
+            selectPhase(.focus)
+        }
     }
 
     public func copyScratchpadToClipboard() {

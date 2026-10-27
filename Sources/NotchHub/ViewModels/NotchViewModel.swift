@@ -9,16 +9,16 @@ public enum NotchExpansionState: String, Equatable, Sendable {
 }
 
 public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
-    case media = "Media"
     case aiUsage = "AI Usage"
+    case timer = "Pomodoro Timer"
     case shelf = "Drop Shelf"
 
     public var id: String { rawValue }
 
     public var symbolName: String {
         switch self {
-        case .media: return "waveform.circle.fill"
         case .aiUsage: return "sparkles"
+        case .timer: return "timer"
         case .shelf: return "tray.and.arrow.down.fill"
         }
     }
@@ -30,7 +30,7 @@ public final class NotchViewModel: ObservableObject {
     private static let compactWingsStorageKey = "com.notchhub.compactwings.enabled"
 
     @Published public private(set) var expansionState: NotchExpansionState = .compactWings
-    @Published public var selectedTab: NotchTab = .media
+    @Published public var selectedTab: NotchTab = .aiUsage
     @Published public var isCompactWingsEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isCompactWingsEnabled, forKey: Self.compactWingsStorageKey)
@@ -52,7 +52,6 @@ public final class NotchViewModel: ObservableObject {
     public static let springAnimation: Animation = .spring(response: 0.35, dampingFraction: 0.78)
 
     public let geometryManager: ScreenGeometryManager
-    public let mediaViewModel: MediaViewModel
     public let aiUsageViewModel: AIUsageViewModel
     public let shelfViewModel: ShelfViewModel
     public let utilitiesViewModel: UtilitiesViewModel
@@ -63,13 +62,11 @@ public final class NotchViewModel: ObservableObject {
 
     public init(
         geometryManager: ScreenGeometryManager = ScreenGeometryManager(),
-        mediaViewModel: MediaViewModel = MediaViewModel(),
         aiUsageViewModel: AIUsageViewModel = AIUsageViewModel(),
         shelfViewModel: ShelfViewModel = ShelfViewModel(),
         utilitiesViewModel: UtilitiesViewModel = UtilitiesViewModel()
     ) {
         self.geometryManager = geometryManager
-        self.mediaViewModel = mediaViewModel
         self.aiUsageViewModel = aiUsageViewModel
         self.shelfViewModel = shelfViewModel
         self.utilitiesViewModel = utilitiesViewModel
@@ -117,10 +114,9 @@ public final class NotchViewModel: ObservableObject {
         let base = geometryManager.currentGeometry.notchSize
         switch expansionState {
         case .collapsed:
-            // Include top ear horizontal overhang (2 * topEarRadius) so the inner body matches the exact physical notch width
             return CGSize(width: base.width + (topEarRadius * 2.0), height: base.height)
         case .compactWings:
-            let wingsExtraWidth: CGFloat = 152.0
+            let wingsExtraWidth: CGFloat = 148.0
             return CGSize(
                 width: base.width + wingsExtraWidth + (topEarRadius * 2.0),
                 height: max(base.height, 34.0)
@@ -128,7 +124,7 @@ public final class NotchViewModel: ObservableObject {
         case .expanded:
             return CGSize(
                 width: max(540.0, base.width + 340.0) + (topEarRadius * 2.0),
-                height: 262.0
+                height: 256.0
             )
         }
     }

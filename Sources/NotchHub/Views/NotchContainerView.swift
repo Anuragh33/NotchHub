@@ -42,7 +42,6 @@ public struct NotchContainerView: View {
 
                     case .compactWings:
                         CompactWingsView(
-                            mediaViewModel: viewModel.mediaViewModel,
                             aiUsageViewModel: viewModel.aiUsageViewModel,
                             utilitiesViewModel: viewModel.utilitiesViewModel,
                             hardwareNotchWidth: viewModel.geometryManager.currentGeometry.notchSize.width

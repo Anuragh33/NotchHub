@@ -14,28 +14,38 @@ public struct QuickUtilitiesBar: View {
     }
 
     public var body: some View {
+        let timerAccent = utilitiesViewModel.currentPhase.accentColor
+
         HStack(spacing: 10) {
-            // 1. Quick Pomodoro Timer Control Pill
+            // 1. Quick Animated Pomodoro Timer Pill
             HStack(spacing: 6) {
                 Button(action: { utilitiesViewModel.toggleTimer() }) {
-                    Image(systemName: utilitiesViewModel.isTimerRunning ? "pause.fill" : "timer")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(utilitiesViewModel.isTimerRunning ? Color.orange : Color.white.opacity(0.85))
+                    Image(systemName: utilitiesViewModel.isTimerRunning ? "pause.fill" : "play.fill")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundStyle(utilitiesViewModel.isTimerRunning ? timerAccent : Color.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
 
-                Text(utilitiesViewModel.formattedTimer)
-                    .font(.system(size: 11.5, weight: .bold, design: .monospaced))
-                    .foregroundStyle(utilitiesViewModel.isTimerRunning ? Color.orange : .white)
-                    .frame(width: 42, alignment: .leading)
+                Button(action: {
+                    withAnimation(NotchViewModel.springAnimation) {
+                        notchViewModel.selectedTab = .timer
+                    }
+                }) {
+                    Text(utilitiesViewModel.formattedTimer)
+                        .font(.system(size: 11.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(utilitiesViewModel.isTimerRunning ? timerAccent : .white)
+                        .frame(width: 42, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .help("Open Animated Pomodoro Timer")
 
-                Button(action: { utilitiesViewModel.resetTimer(minutes: 25) }) {
+                Button(action: { utilitiesViewModel.resetTimer() }) {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.55))
                 }
                 .buttonStyle(.plain)
-                .help("Reset 25m Pomodoro")
+                .help("Reset Timer")
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -45,7 +55,7 @@ public struct QuickUtilitiesBar: View {
                     .overlay(
                         Capsule(style: .continuous)
                             .stroke(
-                                utilitiesViewModel.isTimerRunning ? Color.orange.opacity(0.5) : Color.white.opacity(0.12),
+                                utilitiesViewModel.isTimerRunning ? timerAccent.opacity(0.55) : Color.white.opacity(0.12),
                                 lineWidth: 0.8
                             )
                     )
@@ -83,14 +93,14 @@ public struct QuickUtilitiesBar: View {
                     )
             )
 
-            // 3. Settings & Menu Bar Icon / Compact Wings Toggle / Quit Menu
+            // 3. Settings Menu (Menu Bar Icon On/Off, Compact Wings On/Off, AI Sign-In, Quit)
             Menu {
                 Button(action: {
                     notchViewModel.toggleMenuBarIcon()
                 }) {
                     Label(
-                        notchViewModel.isMenuBarIconEnabled ? "Hide Menu Bar Icon" : "Show Menu Bar Icon",
-                        systemImage: notchViewModel.isMenuBarIconEnabled ? "menubar.arrow.up.rectangle" : "menubar.rectangle"
+                        notchViewModel.isMenuBarIconEnabled ? "Menu Bar Icon: On (Click to Turn Off)" : "Menu Bar Icon: Off (Click to Turn On)",
+                        systemImage: notchViewModel.isMenuBarIconEnabled ? "menubar.rectangle" : "menubar.arrow.up.rectangle"
                     )
                 }
 
@@ -98,33 +108,43 @@ public struct QuickUtilitiesBar: View {
                     notchViewModel.toggleCompactWingsMode()
                 }) {
                     Label(
-                        notchViewModel.isCompactWingsEnabled ? "Disable Compact Wings" : "Enable Compact Wings",
-                        systemImage: notchViewModel.isCompactWingsEnabled ? "rectangle.compress.vertical" : "rectangle.expand.vertical"
+                        notchViewModel.isCompactWingsEnabled ? "Compact Wings: On (Click to Turn Off)" : "Compact Wings: Off (Click to Turn On)",
+                        systemImage: notchViewModel.isCompactWingsEnabled ? "rectangle.expand.vertical" : "rectangle.compress.vertical"
                     )
                 }
 
                 Divider()
 
-                Button("Open AI Subscription Quotas") {
-                    notchViewModel.expandImmediately(to: .aiUsage)
+                Menu("Sign In / Connect AI Account...") {
+                    ForEach(AIProviderType.allCases) { provider in
+                        Button(action: {
+                            notchViewModel.aiUsageViewModel.openSignInWindow(for: provider)
+                        }) {
+                            Label("Sign In to \(provider.rawValue)...", systemImage: provider.symbolName)
+                        }
+                    }
                 }
 
-                Button("Refresh Local Ollama Status") {
+                Button(action: {
                     Task {
                         await notchViewModel.aiUsageViewModel.refreshLiveStatuses()
                     }
+                }) {
+                    Label("Sync All AI Accounts Now", systemImage: "arrow.triangle.2.circlepath")
                 }
 
                 Divider()
 
-                Button("Set 25m Focus Timer") {
-                    utilitiesViewModel.resetTimer(minutes: 25)
+                Button("Start 25m Focus Pomodoro") {
+                    utilitiesViewModel.selectPhase(.focus)
                     utilitiesViewModel.startTimer()
+                    notchViewModel.expandImmediately(to: .timer)
                 }
 
-                Button("Set 5m Short Break") {
-                    utilitiesViewModel.resetTimer(minutes: 5)
+                Button("Start 5m Short Break") {
+                    utilitiesViewModel.selectPhase(.shortBreak)
                     utilitiesViewModel.startTimer()
+                    notchViewModel.expandImmediately(to: .timer)
                 }
 
                 Divider()
@@ -137,11 +157,11 @@ public struct QuickUtilitiesBar: View {
             } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 28, height: 26)
                     .background(
                         Circle()
-                            .fill(Color.white.opacity(0.1))
+                            .fill(Color.white.opacity(0.10))
                     )
             }
             .menuStyle(.borderlessButton)
