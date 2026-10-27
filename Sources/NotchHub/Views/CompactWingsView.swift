@@ -3,15 +3,18 @@ import SwiftUI
 
 public struct CompactWingsView: View {
     @ObservedObject var mediaViewModel: MediaViewModel
+    @ObservedObject var aiUsageViewModel: AIUsageViewModel
     @ObservedObject var utilitiesViewModel: UtilitiesViewModel
     let hardwareNotchWidth: CGFloat
 
     public init(
         mediaViewModel: MediaViewModel,
+        aiUsageViewModel: AIUsageViewModel,
         utilitiesViewModel: UtilitiesViewModel,
         hardwareNotchWidth: CGFloat
     ) {
         self.mediaViewModel = mediaViewModel
+        self.aiUsageViewModel = aiUsageViewModel
         self.utilitiesViewModel = utilitiesViewModel
         self.hardwareNotchWidth = hardwareNotchWidth
     }
@@ -45,7 +48,7 @@ public struct CompactWingsView: View {
                     .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.88))
                     .lineLimit(1)
-                    .frame(maxWidth: 42, alignment: .leading)
+                    .frame(maxWidth: 44, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 10)
@@ -53,15 +56,24 @@ public struct CompactWingsView: View {
             // Center Spacer matching the exact physical camera cutout width
             Spacer(minLength: hardwareNotchWidth)
 
-            // Right Wing: Active Pomodoro Timer or Animated Audio Equalizer Waveform
-            HStack(spacing: 6) {
+            // Right Wing: AI Quota Badge + Active Pomodoro Timer or Animated Audio Equalizer Waveform
+            HStack(spacing: 7) {
+                HStack(spacing: 3) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.cyan)
+                    Text("\(aiUsageViewModel.averageRemainingPercentInt)%")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.88))
+                }
+
                 if utilitiesViewModel.isTimerRunning {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 3) {
                         Circle()
                             .fill(Color.orange)
                             .frame(width: 5, height: 5)
                         Text(utilitiesViewModel.formattedTimer)
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(.system(size: 10.5, weight: .bold, design: .monospaced))
                             .foregroundStyle(Color.orange)
                     }
                 } else {
@@ -69,13 +81,13 @@ public struct CompactWingsView: View {
                         levels: mediaViewModel.equalizerLevels,
                         isPlaying: mediaViewModel.track.isPlaying,
                         accentColor: Color(nsColor: NSColor(hex: mediaViewModel.track.accentHex) ?? .systemIndigo),
-                        barWidth: 2.5,
-                        maxBarHeight: 14.0
+                        barWidth: 2.2,
+                        maxBarHeight: 13.0
                     )
                 }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, 12)
+            .padding(.trailing, 10)
         }
         .frame(maxHeight: .infinity)
     }

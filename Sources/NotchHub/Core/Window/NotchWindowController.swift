@@ -9,8 +9,8 @@ public final class NotchWindowController: NSObject, NotchPanelTrackingDelegate {
     private let eventMonitor: NotchEventMonitor
     private var cancellables = Set<AnyCancellable>()
 
-    private static let canvasWidth: CGFloat = 620.0
-    private static let canvasHeight: CGFloat = 300.0
+    private static let canvasWidth: CGFloat = 660.0
+    private static let canvasHeight: CGFloat = 310.0
 
     public init(
         viewModel: NotchViewModel = NotchViewModel(),

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="NotchHub"
-VERSION="1.0.0"
+VERSION="1.1.0"
 BUNDLE_ID="com.anuragh33.NotchHub"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"

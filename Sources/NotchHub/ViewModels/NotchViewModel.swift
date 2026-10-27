@@ -9,7 +9,8 @@ public enum NotchExpansionState: String, Equatable, Sendable {
 }
 
 public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
-    case media = "Now Playing"
+    case media = "Media"
+    case aiUsage = "AI Usage"
     case shelf = "Drop Shelf"
 
     public var id: String { rawValue }
@@ -17,6 +18,7 @@ public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
     public var symbolName: String {
         switch self {
         case .media: return "waveform.circle.fill"
+        case .aiUsage: return "sparkles"
         case .shelf: return "tray.and.arrow.down.fill"
         }
     }
@@ -24,15 +26,24 @@ public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
 
 @MainActor
 public final class NotchViewModel: ObservableObject {
+    private static let menuBarIconStorageKey = "com.notchhub.menubar.enabled"
+    private static let compactWingsStorageKey = "com.notchhub.compactwings.enabled"
+
     @Published public private(set) var expansionState: NotchExpansionState = .compactWings
     @Published public var selectedTab: NotchTab = .media
-    @Published public var isCompactWingsEnabled: Bool = true {
+    @Published public var isCompactWingsEnabled: Bool {
         didSet {
+            UserDefaults.standard.set(isCompactWingsEnabled, forKey: Self.compactWingsStorageKey)
             if expansionState != .expanded {
                 withAnimation(Self.springAnimation) {
                     expansionState = restingState
                 }
             }
+        }
+    }
+    @Published public var isMenuBarIconEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isMenuBarIconEnabled, forKey: Self.menuBarIconStorageKey)
         }
     }
     @Published public var isHoveringNotch: Bool = false
@@ -42,6 +53,7 @@ public final class NotchViewModel: ObservableObject {
 
     public let geometryManager: ScreenGeometryManager
     public let mediaViewModel: MediaViewModel
+    public let aiUsageViewModel: AIUsageViewModel
     public let shelfViewModel: ShelfViewModel
     public let utilitiesViewModel: UtilitiesViewModel
 
@@ -52,13 +64,21 @@ public final class NotchViewModel: ObservableObject {
     public init(
         geometryManager: ScreenGeometryManager = ScreenGeometryManager(),
         mediaViewModel: MediaViewModel = MediaViewModel(),
+        aiUsageViewModel: AIUsageViewModel = AIUsageViewModel(),
         shelfViewModel: ShelfViewModel = ShelfViewModel(),
         utilitiesViewModel: UtilitiesViewModel = UtilitiesViewModel()
     ) {
         self.geometryManager = geometryManager
         self.mediaViewModel = mediaViewModel
+        self.aiUsageViewModel = aiUsageViewModel
         self.shelfViewModel = shelfViewModel
         self.utilitiesViewModel = utilitiesViewModel
+
+        let savedWings = UserDefaults.standard.object(forKey: Self.compactWingsStorageKey) as? Bool ?? true
+        let savedMenuBar = UserDefaults.standard.object(forKey: Self.menuBarIconStorageKey) as? Bool ?? true
+        self.isCompactWingsEnabled = savedWings
+        self.isMenuBarIconEnabled = savedMenuBar
+        self.expansionState = savedWings ? .compactWings : .collapsed
 
         geometryManager.objectWillChange
             .sink { [weak self] _ in
@@ -100,15 +120,15 @@ public final class NotchViewModel: ObservableObject {
             // Include top ear horizontal overhang (2 * topEarRadius) so the inner body matches the exact physical notch width
             return CGSize(width: base.width + (topEarRadius * 2.0), height: base.height)
         case .compactWings:
-            let wingsExtraWidth: CGFloat = 136.0
+            let wingsExtraWidth: CGFloat = 152.0
             return CGSize(
                 width: base.width + wingsExtraWidth + (topEarRadius * 2.0),
                 height: max(base.height, 34.0)
             )
         case .expanded:
             return CGSize(
-                width: max(500.0, base.width + 300.0) + (topEarRadius * 2.0),
-                height: 256.0
+                width: max(540.0, base.width + 340.0) + (topEarRadius * 2.0),
+                height: 262.0
             )
         }
     }
@@ -213,6 +233,10 @@ public final class NotchViewModel: ObservableObject {
         withAnimation(Self.springAnimation) {
             isCompactWingsEnabled.toggle()
         }
+    }
+
+    public func toggleMenuBarIcon() {
+        isMenuBarIconEnabled.toggle()
     }
 
     public func expandImmediately(to tab: NotchTab? = nil) {

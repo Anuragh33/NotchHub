@@ -83,8 +83,17 @@ public struct QuickUtilitiesBar: View {
                     )
             )
 
-            // 3. Settings & Compact Wings Toggle / Quit Menu
+            // 3. Settings & Menu Bar Icon / Compact Wings Toggle / Quit Menu
             Menu {
+                Button(action: {
+                    notchViewModel.toggleMenuBarIcon()
+                }) {
+                    Label(
+                        notchViewModel.isMenuBarIconEnabled ? "Hide Menu Bar Icon" : "Show Menu Bar Icon",
+                        systemImage: notchViewModel.isMenuBarIconEnabled ? "menubar.arrow.up.rectangle" : "menubar.rectangle"
+                    )
+                }
+
                 Button(action: {
                     notchViewModel.toggleCompactWingsMode()
                 }) {
@@ -92,6 +101,18 @@ public struct QuickUtilitiesBar: View {
                         notchViewModel.isCompactWingsEnabled ? "Disable Compact Wings" : "Enable Compact Wings",
                         systemImage: notchViewModel.isCompactWingsEnabled ? "rectangle.compress.vertical" : "rectangle.expand.vertical"
                     )
+                }
+
+                Divider()
+
+                Button("Open AI Subscription Quotas") {
+                    notchViewModel.expandImmediately(to: .aiUsage)
+                }
+
+                Button("Refresh Local Ollama Status") {
+                    Task {
+                        await notchViewModel.aiUsageViewModel.refreshLiveStatuses()
+                    }
                 }
 
                 Divider()
