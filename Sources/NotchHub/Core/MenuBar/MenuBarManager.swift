@@ -111,9 +111,30 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        // Section 3: Settings (Compact Wings & Menu Bar Icon Toggle)
+        // Section 3: Notch Display Always / Off & Settings
+        let displayHeader = NSMenuItem(title: "Notch Display Settings", action: nil, keyEquivalent: "")
+        displayHeader.isEnabled = false
+        menu.addItem(displayHeader)
+
+        let modeAlways = NSMenuItem(title: "Notch Display: Always", action: #selector(setDisplayAlways), keyEquivalent: "")
+        modeAlways.target = self
+        modeAlways.state = (notchViewModel.notchDisplayMode == .always) ? .on : .off
+        menu.addItem(modeAlways)
+
+        let modeIdleOff = NSMenuItem(title: "Notch Display: Off When Not in Use (Hover Only)", action: #selector(setDisplayOffWhenIdle), keyEquivalent: "")
+        modeIdleOff.target = self
+        modeIdleOff.state = (notchViewModel.notchDisplayMode == .offWhenIdle) ? .on : .off
+        menu.addItem(modeIdleOff)
+
+        let modeCompletelyOff = NSMenuItem(title: "Notch Display: Completely Off (Menu Bar Only)", action: #selector(setDisplayCompletelyOff), keyEquivalent: "")
+        modeCompletelyOff.target = self
+        modeCompletelyOff.state = (notchViewModel.notchDisplayMode == .completelyOff) ? .on : .off
+        menu.addItem(modeCompletelyOff)
+
+        menu.addItem(.separator())
+
         let toggleWings = NSMenuItem(
-            title: notchViewModel.isCompactWingsEnabled ? "Disable Compact Wings" : "Enable Compact Wings",
+            title: notchViewModel.isCompactWingsEnabled ? "Compact Wings: On" : "Compact Wings: Off",
             action: #selector(toggleCompactWings),
             keyEquivalent: "w"
         )
@@ -165,6 +186,18 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         Task {
             await notchViewModel.aiUsageViewModel.refreshLiveStatuses()
         }
+    }
+
+    @objc private func setDisplayAlways() {
+        notchViewModel.setNotchDisplayMode(.always)
+    }
+
+    @objc private func setDisplayOffWhenIdle() {
+        notchViewModel.setNotchDisplayMode(.offWhenIdle)
+    }
+
+    @objc private func setDisplayCompletelyOff() {
+        notchViewModel.setNotchDisplayMode(.completelyOff)
     }
 
     @objc private func toggleCompactWings() {

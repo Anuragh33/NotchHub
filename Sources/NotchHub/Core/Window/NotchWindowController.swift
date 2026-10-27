@@ -34,7 +34,9 @@ public final class NotchWindowController: NSObject, NotchPanelTrackingDelegate {
 
     public func showWindow() {
         repositionPanel(for: viewModel.geometryManager.currentGeometry)
-        panel.orderFrontRegardless()
+        if viewModel.notchDisplayMode != .completelyOff {
+            panel.orderFrontRegardless()
+        }
         eventMonitor.startMonitoring()
     }
 
@@ -58,6 +60,20 @@ public final class NotchWindowController: NSObject, NotchPanelTrackingDelegate {
                 }
             }
             .store(in: &cancellables)
+
+        viewModel.$notchDisplayMode
+            .receive(on: RunLoop.main)
+            .sink { [weak self] mode in
+                guard let self else { return }
+                if mode == .completelyOff {
+                    self.panel.ignoresMouseEvents = true
+                    self.panel.orderOut(nil)
+                } else {
+                    self.panel.orderFrontRegardless()
+                    self.updateMousePassthrough(at: NSEvent.mouseLocation)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func setupEventMonitorCallbacks() {
@@ -73,7 +89,7 @@ public final class NotchWindowController: NSObject, NotchPanelTrackingDelegate {
         }
 
         eventMonitor.onDragNearTop = { [weak self] point in
-            guard let self else { return }
+            guard let self, self.viewModel.notchDisplayMode != .completelyOff else { return }
             self.panel.ignoresMouseEvents = false
             self.viewModel.handleSystemDrag(at: point)
         }
@@ -86,6 +102,13 @@ public final class NotchWindowController: NSObject, NotchPanelTrackingDelegate {
     }
 
     private func updateMousePassthrough(at screenPoint: CGPoint) {
+        if viewModel.notchDisplayMode == .completelyOff {
+            if !panel.ignoresMouseEvents {
+                panel.ignoresMouseEvents = true
+            }
+            return
+        }
+
         if viewModel.isDraggingOverScreenTop {
             if panel.ignoresMouseEvents {
                 panel.ignoresMouseEvents = false
@@ -134,6 +157,7 @@ public final class NotchWindowController: NSObject, NotchPanelTrackingDelegate {
     }
 
     public func panelDraggingDidEnter(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard viewModel.notchDisplayMode != .completelyOff else { return [] }
         panel.ignoresMouseEvents = false
         viewModel.shelfViewModel.isDropTargeted = true
         viewModel.expandImmediately(to: .shelf)

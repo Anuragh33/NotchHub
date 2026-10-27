@@ -93,8 +93,36 @@ public struct QuickUtilitiesBar: View {
                     )
             )
 
-            // 3. Settings Menu (Menu Bar Icon On/Off, Compact Wings On/Off, AI Sign-In, Quit)
+            // 3. Settings Menu (Notch Display Always/Off, Menu Bar Icon On/Off, Compact Wings On/Off, AI Sign-In, Quit)
             Menu {
+                Button(action: {
+                    notchViewModel.toggleNotchAlwaysDisplayed()
+                }) {
+                    Label(
+                        notchViewModel.notchDisplayMode == .always
+                            ? "Notch Display: Always (Click to Set Off When Idle)"
+                            : "Notch Display: Off When Idle (Click to Set Always)",
+                        systemImage: notchViewModel.notchDisplayMode == .always ? "eye.fill" : "eye.slash.fill"
+                    )
+                }
+
+                Menu("Notch Display Mode (\(notchViewModel.notchDisplayMode.rawValue))") {
+                    ForEach(NotchDisplayMode.allCases) { mode in
+                        Button(action: {
+                            notchViewModel.setNotchDisplayMode(mode)
+                        }) {
+                            HStack {
+                                Text(mode == .always ? "Always Display Notch" : (mode == .offWhenIdle ? "Off When Not in Use (Hover to Show)" : "Completely Off (Menu Bar Only)"))
+                                if notchViewModel.notchDisplayMode == mode {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
                 Button(action: {
                     notchViewModel.toggleMenuBarIcon()
                 }) {

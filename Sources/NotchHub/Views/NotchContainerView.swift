@@ -12,6 +12,7 @@ public struct NotchContainerView: View {
         let topR = viewModel.topEarRadius
         let botR = viewModel.bottomCornerRadius
         let notchShape = NotchShape(topCornerRadius: topR, bottomCornerRadius: botR)
+        let isHidden = viewModel.isHiddenWhenIdle
 
         ZStack(alignment: .top) {
             Color.clear
@@ -23,7 +24,7 @@ public struct NotchContainerView: View {
                     .overlay(
                         notchShape
                             .stroke(
-                                Color.white.opacity(viewModel.expansionState == .collapsed ? 0.0 : 0.11),
+                                Color.white.opacity((viewModel.expansionState == .collapsed || isHidden) ? 0.0 : 0.11),
                                 lineWidth: 0.75
                             )
                     )
@@ -59,6 +60,7 @@ public struct NotchContainerView: View {
             .frame(width: size.width, height: size.height, alignment: .top)
             .clipShape(notchShape)
             .contentShape(notchShape)
+            .opacity(isHidden ? 0.0 : 1.0)
             .onHover { hovering in
                 if hovering {
                     viewModel.handleMouseEnteredPanel()
@@ -67,12 +69,13 @@ public struct NotchContainerView: View {
                 }
             }
             .onTapGesture {
-                if viewModel.expansionState != .expanded {
+                if viewModel.expansionState != .expanded && viewModel.notchDisplayMode != .completelyOff {
                     viewModel.expandImmediately()
                 }
             }
             .animation(NotchViewModel.springAnimation, value: viewModel.expansionState)
             .animation(NotchViewModel.springAnimation, value: viewModel.selectedTab)
+            .animation(NotchViewModel.springAnimation, value: viewModel.notchDisplayMode)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }

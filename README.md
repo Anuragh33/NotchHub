@@ -4,10 +4,10 @@
 
 ---
 
-## Download & Install (Latest Release: v1.2.0)
+## Download & Install (Latest Release: v1.3.0)
 
-1. Download **`NotchHub-v1.2.0-macOS.dmg`** (or **`NotchHub-v1.2.0-macOS.zip`**) from the [Latest GitHub Release](https://github.com/Anuragh33/NotchHub/releases/latest).
-2. Open `NotchHub-v1.2.0-macOS.dmg` and drag **`NotchHub.app`** into your **`Applications`** folder.
+1. Download **`NotchHub-v1.3.0-macOS.dmg`** (or **`NotchHub-v1.3.0-macOS.zip`**) from the [Latest GitHub Release](https://github.com/Anuragh33/NotchHub/releases/latest).
+2. Open `NotchHub-v1.3.0-macOS.dmg` and drag **`NotchHub.app`** into your **`Applications`** folder.
 3. Since the app is ad-hoc signed without an Apple Developer ID certificate, remove the quarantine attribute on first launch or right-click → **Open**:
    ```bash
    xattr -cr /Applications/NotchHub.app
@@ -17,6 +17,9 @@
 ---
 
 ## Features
+
+- **Notch Display: Always / Off When Not in Use / Completely Off**:
+  - In **Settings (`gearshape.fill`)** or the **Menu Bar Dropdown**, toggle between **Always Display Notch**, **Off When Not in Use (Hover Only)** (where the notch stays 100% invisible when idle and only materializes when you hover at the top center or drag a file), and **Completely Off (Menu Bar Only)**.
 
 - **Real-Time System AI Account Sync & Built-In Sign-In**:
   - Automatically discovers and syncs live credentials, OAuth endpoints, and SQLite telemetry from your system for **Gemini** (`~/.gemini`), **Claude** (`~/.claude` & `api.anthropic.com/api/oauth/usage`), **ChatGPT** (`~/.codex/auth.json`, `chatgpt.com/backend-api/wham/usage`, and `~/.codex/state_5.sqlite`), **OpenCode** (`~/.local/share/opencode/opencode.db` & `auth.json`), and **Ollama** (`127.0.0.1:11434/api/tags` & `/api/ps`).

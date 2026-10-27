@@ -8,6 +8,14 @@ public enum NotchExpansionState: String, Equatable, Sendable {
     case expanded
 }
 
+public enum NotchDisplayMode: String, CaseIterable, Identifiable, Sendable {
+    case always = "Always"
+    case offWhenIdle = "Off When Not in Use"
+    case completelyOff = "Completely Off"
+
+    public var id: String { rawValue }
+}
+
 public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
     case aiUsage = "AI Usage"
     case timer = "Pomodoro Timer"
@@ -28,9 +36,26 @@ public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
 public final class NotchViewModel: ObservableObject {
     private static let menuBarIconStorageKey = "com.notchhub.menubar.enabled"
     private static let compactWingsStorageKey = "com.notchhub.compactwings.enabled"
+    private static let notchDisplayModeStorageKey = "com.notchhub.display.mode"
 
     @Published public private(set) var expansionState: NotchExpansionState = .compactWings
     @Published public var selectedTab: NotchTab = .aiUsage
+    @Published public var notchDisplayMode: NotchDisplayMode {
+        didSet {
+            UserDefaults.standard.set(notchDisplayMode.rawValue, forKey: Self.notchDisplayModeStorageKey)
+            if notchDisplayMode == .completelyOff {
+                // Ensure the Menu Bar Icon is enabled so the user can always turn the Notch back on
+                if !isMenuBarIconEnabled {
+                    isMenuBarIconEnabled = true
+                }
+                collapseImmediately()
+            } else if expansionState != .expanded {
+                withAnimation(Self.springAnimation) {
+                    expansionState = restingState
+                }
+            }
+        }
+    }
     @Published public var isCompactWingsEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isCompactWingsEnabled, forKey: Self.compactWingsStorageKey)
@@ -73,9 +98,13 @@ public final class NotchViewModel: ObservableObject {
 
         let savedWings = UserDefaults.standard.object(forKey: Self.compactWingsStorageKey) as? Bool ?? true
         let savedMenuBar = UserDefaults.standard.object(forKey: Self.menuBarIconStorageKey) as? Bool ?? true
+        let savedModeRaw = UserDefaults.standard.string(forKey: Self.notchDisplayModeStorageKey) ?? NotchDisplayMode.always.rawValue
+        let savedMode = NotchDisplayMode(rawValue: savedModeRaw) ?? .always
+
         self.isCompactWingsEnabled = savedWings
         self.isMenuBarIconEnabled = savedMenuBar
-        self.expansionState = savedWings ? .compactWings : .collapsed
+        self.notchDisplayMode = savedMode
+        self.expansionState = (savedMode == .always && savedWings) ? .compactWings : .collapsed
 
         geometryManager.objectWillChange
             .sink { [weak self] _ in
@@ -85,7 +114,22 @@ public final class NotchViewModel: ObservableObject {
     }
 
     public var restingState: NotchExpansionState {
-        isCompactWingsEnabled ? .compactWings : .collapsed
+        if notchDisplayMode != .always {
+            return .collapsed
+        }
+        return isCompactWingsEnabled ? .compactWings : .collapsed
+    }
+
+    /// True when the notch visual background & contents should be hidden (0% opacity) because it is not in use.
+    public var isHiddenWhenIdle: Bool {
+        switch notchDisplayMode {
+        case .always:
+            return false
+        case .offWhenIdle:
+            return expansionState != .expanded
+        case .completelyOff:
+            return true
+        }
     }
 
     public var topEarRadius: CGFloat {
@@ -140,6 +184,8 @@ public final class NotchViewModel: ObservableObject {
     // MARK: - Hover, Drag, and Expansion Physics (150ms Expand / 300ms Collapse)
 
     public func handleCursorMoved(at screenPoint: CGPoint) {
+        guard notchDisplayMode != .completelyOff else { return }
+
         let interactiveRect = activeInteractiveScreenRect().insetBy(dx: -6.0, dy: -4.0)
         let inside = NSMouseInRect(screenPoint, interactiveRect, false)
 
@@ -159,6 +205,7 @@ public final class NotchViewModel: ObservableObject {
     }
 
     public func handleMouseEnteredPanel() {
+        guard notchDisplayMode != .completelyOff else { return }
         isHoveringNotch = true
         cancelCollapseTimer()
         scheduleHoverExpansion()
@@ -186,6 +233,8 @@ public final class NotchViewModel: ObservableObject {
     }
 
     public func handleSystemDrag(at screenPoint: CGPoint) {
+        guard notchDisplayMode != .completelyOff else { return }
+
         let geom = geometryManager.currentGeometry
         let topStripHeight: CGFloat = 60.0
         let topDragBand = CGRect(
@@ -225,9 +274,24 @@ public final class NotchViewModel: ObservableObject {
         }
     }
 
+    public func toggleNotchAlwaysDisplayed() {
+        withAnimation(Self.springAnimation) {
+            notchDisplayMode = (notchDisplayMode == .always) ? .offWhenIdle : .always
+        }
+    }
+
+    public func setNotchDisplayMode(_ mode: NotchDisplayMode) {
+        withAnimation(Self.springAnimation) {
+            notchDisplayMode = mode
+        }
+    }
+
     public func toggleCompactWingsMode() {
         withAnimation(Self.springAnimation) {
             isCompactWingsEnabled.toggle()
+            if isCompactWingsEnabled && notchDisplayMode != .always {
+                notchDisplayMode = .always
+            }
         }
     }
 
@@ -236,6 +300,9 @@ public final class NotchViewModel: ObservableObject {
     }
 
     public func expandImmediately(to tab: NotchTab? = nil) {
+        if notchDisplayMode == .completelyOff {
+            notchDisplayMode = .offWhenIdle
+        }
         cancelHoverExpansion()
         cancelCollapseTimer()
         withAnimation(Self.springAnimation) {
@@ -255,11 +322,11 @@ public final class NotchViewModel: ObservableObject {
     }
 
     private func scheduleHoverExpansion() {
-        guard expansionState != .expanded else { return }
+        guard notchDisplayMode != .completelyOff, expansionState != .expanded else { return }
         hoverExpandTask?.cancel()
         hoverExpandTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(150))
-            guard !Task.isCancelled, let self, self.isHoveringNotch else { return }
+            guard !Task.isCancelled, let self, self.isHoveringNotch, self.notchDisplayMode != .completelyOff else { return }
             withAnimation(Self.springAnimation) {
                 self.expansionState = .expanded
             }
