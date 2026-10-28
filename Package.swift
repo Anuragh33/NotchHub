@@ -19,6 +19,7 @@ let package = Package(
                 .linkedFramework("Combine"),
                 .linkedFramework("UniformTypeIdentifiers"),
                 .linkedFramework("WebKit"),
+                .linkedFramework("Carbon"),
                 .linkedLibrary("sqlite3")
             ]
         )

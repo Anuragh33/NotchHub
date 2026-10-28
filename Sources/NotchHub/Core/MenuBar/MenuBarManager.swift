@@ -63,27 +63,47 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
     private func rebuildMenu(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let headerItem = NSMenuItem(title: "NotchHub — AI Quotas, Pomodoro & Shelf", action: nil, keyEquivalent: "")
+        let headerItem = NSMenuItem(title: "NotchHub — Dynamic Island Hub", action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
         menu.addItem(headerItem)
 
         menu.addItem(.separator())
 
-        // Section 1: Open Notch Tabs
-        let openAI = NSMenuItem(title: "Open AI Subscription Quotas", action: #selector(openAITab), keyEquivalent: "1")
+        // Section 1: Open Notch Modules
+        let openHome = NSMenuItem(title: "Open Bento Home Dashboard", action: #selector(openHomeTab), keyEquivalent: "1")
+        openHome.target = self
+        openHome.image = NSImage(systemSymbolName: "square.grid.2x2.fill", accessibilityDescription: nil)
+        menu.addItem(openHome)
+
+        let openAI = NSMenuItem(title: "Open AI Subscription Quotas", action: #selector(openAITab), keyEquivalent: "2")
         openAI.target = self
         openAI.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil)
         menu.addItem(openAI)
 
-        let openTimer = NSMenuItem(title: "Open Animated Pomodoro Timer", action: #selector(openTimerTab), keyEquivalent: "2")
+        let openTimer = NSMenuItem(title: "Open Animated Pomodoro Timer", action: #selector(openTimerTab), keyEquivalent: "3")
         openTimer.target = self
         openTimer.image = NSImage(systemSymbolName: "timer", accessibilityDescription: nil)
         menu.addItem(openTimer)
 
-        let openShelf = NSMenuItem(title: "Open File Drop Shelf", action: #selector(openShelfTab), keyEquivalent: "3")
+        let openShelf = NSMenuItem(title: "Open File Drop Shelf", action: #selector(openShelfTab), keyEquivalent: "4")
         openShelf.target = self
         openShelf.image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: nil)
         menu.addItem(openShelf)
+
+        let openClipboard = NSMenuItem(title: "Open Clipboard History", action: #selector(openClipboardTab), keyEquivalent: "5")
+        openClipboard.target = self
+        openClipboard.image = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: nil)
+        menu.addItem(openClipboard)
+
+        let openApps = NSMenuItem(title: "Open Pinned App Dock", action: #selector(openAppsTab), keyEquivalent: "6")
+        openApps.target = self
+        openApps.image = NSImage(systemSymbolName: "square.grid.3x3.fill", accessibilityDescription: nil)
+        menu.addItem(openApps)
+
+        let openPalette = NSMenuItem(title: "Command Palette (⌃⌥K)", action: #selector(openPaletteTab), keyEquivalent: "k")
+        openPalette.target = self
+        openPalette.image = NSImage(systemSymbolName: "command", accessibilityDescription: nil)
+        menu.addItem(openPalette)
 
         menu.addItem(.separator())
 
@@ -158,6 +178,10 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         menu.addItem(quitItem)
     }
 
+    @objc private func openHomeTab() {
+        notchViewModel.expandImmediately(to: .home)
+    }
+
     @objc private func openAITab() {
         notchViewModel.expandImmediately(to: .aiUsage)
     }
@@ -168,6 +192,18 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
     @objc private func openShelfTab() {
         notchViewModel.expandImmediately(to: .shelf)
+    }
+
+    @objc private func openClipboardTab() {
+        notchViewModel.expandImmediately(to: .clipboard)
+    }
+
+    @objc private func openAppsTab() {
+        notchViewModel.expandImmediately(to: .apps)
+    }
+
+    @objc private func openPaletteTab() {
+        notchViewModel.toggleCommandPalette()
     }
 
     @objc private func selectAIProviderFromMenu(_ sender: NSMenuItem) {

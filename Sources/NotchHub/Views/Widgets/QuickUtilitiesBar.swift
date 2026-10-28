@@ -16,7 +16,7 @@ public struct QuickUtilitiesBar: View {
     public var body: some View {
         let timerAccent = utilitiesViewModel.currentPhase.accentColor
 
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             // 1. Quick Animated Pomodoro Timer Pill
             HStack(spacing: 6) {
                 Button(action: { utilitiesViewModel.toggleTimer() }) {
@@ -93,7 +93,30 @@ public struct QuickUtilitiesBar: View {
                     )
             )
 
-            // 3. Settings Menu (Notch Display Always/Off, Menu Bar Icon On/Off, Compact Wings On/Off, AI Sign-In, Quit)
+            // 3. Command Palette Trigger (⌃⌥K)
+            Button(action: {
+                withAnimation(NotchViewModel.springAnimation) {
+                    notchViewModel.selectedTab = (notchViewModel.selectedTab == .palette) ? .home : .palette
+                }
+            }) {
+                HStack(spacing: 3) {
+                    Image(systemName: "command")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("K")
+                        .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                }
+                .foregroundStyle(notchViewModel.selectedTab == .palette ? .black : .white.opacity(0.85))
+                .padding(.horizontal, 8)
+                .frame(height: 26)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(notchViewModel.selectedTab == .palette ? Color.cyan : Color.white.opacity(0.10))
+                )
+            }
+            .buttonStyle(.plain)
+            .help("Toggle Command Palette (⌃⌥K)")
+
+            // 4. Settings Menu (Notch Display Always/Off, Idle Pill Width, Menu Bar Icon On/Off, Compact Wings On/Off, AI Sign-In, Quit)
             Menu {
                 Button(action: {
                     notchViewModel.toggleNotchAlwaysDisplayed()
@@ -114,6 +137,23 @@ public struct QuickUtilitiesBar: View {
                             HStack {
                                 Text(mode == .always ? "Always Display Notch" : (mode == .offWhenIdle ? "Off When Not in Use (Hover to Show)" : "Completely Off (Menu Bar Only)"))
                                 if notchViewModel.notchDisplayMode == mode {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Menu("Idle Pill Width (\(notchViewModel.idlePillPreset.rawValue))") {
+                    ForEach(IdlePillWidthPreset.allCases) { preset in
+                        Button(action: {
+                            withAnimation(NotchViewModel.springAnimation) {
+                                notchViewModel.idlePillPreset = preset
+                            }
+                        }) {
+                            HStack {
+                                Text(preset.rawValue)
+                                if notchViewModel.idlePillPreset == preset {
                                     Image(systemName: "checkmark")
                                 }
                             }

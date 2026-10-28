@@ -13,18 +13,18 @@ public struct ExpandedNotchView: View {
         VStack(spacing: 6) {
             // Top bar flanking the physical camera housing
             HStack(spacing: 0) {
-                // Left of camera housing: Symbol-only Tab Switcher (AI Usage, Timer, Drop Shelf)
-                HStack(spacing: 8) {
-                    ForEach(NotchTab.allCases) { tab in
+                // Left of camera housing: Symbol-only Tab Switcher
+                HStack(spacing: 5) {
+                    ForEach(NotchTab.primaryLeftTabs) { tab in
                         Button(action: {
                             withAnimation(NotchViewModel.springAnimation) {
                                 viewModel.selectedTab = tab
                             }
                         }) {
                             Image(systemName: tab.symbolName)
-                                .font(.system(size: 12.5, weight: .semibold))
+                                .font(.system(size: 11.5, weight: .semibold))
                                 .foregroundStyle(viewModel.selectedTab == tab ? .black : .white.opacity(0.78))
-                                .frame(width: 30, height: 24)
+                                .frame(width: 25, height: 22)
                                 .background(
                                     Capsule(style: .continuous)
                                         .fill(viewModel.selectedTab == tab ? Color.white : Color.white.opacity(0.10))
@@ -34,12 +34,12 @@ public struct ExpandedNotchView: View {
                         .help(tab.rawValue)
                     }
                 }
-                .padding(.leading, 18)
+                .padding(.leading, 16)
 
                 // Center gap reserved for physical camera housing
                 Spacer(minLength: notchGeo.notchSize.width)
 
-                // Right of camera housing: Clean empty wing (Menu Icon & Wings toggles moved inside Settings)
+                // Right of camera housing: Clean wing (Menu Icon & Wings toggles live inside Settings)
                 Spacer()
                     .frame(maxWidth: .infinity)
             }
@@ -48,6 +48,9 @@ public struct ExpandedNotchView: View {
             // Main Modular Widget Content Area
             Group {
                 switch viewModel.selectedTab {
+                case .home:
+                    BentoHomeView(notchViewModel: viewModel)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                 case .aiUsage:
                     AIUsageView(viewModel: viewModel.aiUsageViewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
@@ -57,6 +60,18 @@ public struct ExpandedNotchView: View {
                 case .shelf:
                     FileShelfView(viewModel: viewModel.shelfViewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                case .clipboard:
+                    ClipboardShelfView(viewModel: viewModel.clipboardViewModel)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                case .apps:
+                    AppLauncherView(
+                        viewModel: viewModel.appLauncherViewModel,
+                        onLaunched: { viewModel.collapseImmediately() }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                case .palette:
+                    CommandPaletteView(viewModel: viewModel.commandPaletteViewModel)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -65,7 +80,7 @@ public struct ExpandedNotchView: View {
                 .overlay(Color.white.opacity(0.1))
                 .padding(.horizontal, 18)
 
-            // Bottom Quick Utilities Strip (Quick Timer Pill, Scratchpad, and Settings Menu)
+            // Bottom Quick Utilities Strip (Pomodoro Pill, Scratchpad, ⌃⌥K Command Palette Button, and Settings Menu)
             QuickUtilitiesBar(
                 utilitiesViewModel: viewModel.utilitiesViewModel,
                 notchViewModel: viewModel

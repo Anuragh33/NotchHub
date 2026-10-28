@@ -16,19 +16,48 @@ public enum NotchDisplayMode: String, CaseIterable, Identifiable, Sendable {
     public var id: String { rawValue }
 }
 
+public enum IdlePillWidthPreset: String, CaseIterable, Identifiable, Sendable {
+    case compact = "Compact"
+    case standard = "Standard"
+    case wide = "Wide"
+
+    public var id: String { rawValue }
+
+    public var extraWingsWidth: CGFloat {
+        switch self {
+        case .compact: return 118.0
+        case .standard: return 152.0
+        case .wide: return 194.0
+        }
+    }
+}
+
 public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
+    case home = "Bento Home"
     case aiUsage = "AI Usage"
     case timer = "Pomodoro Timer"
     case shelf = "Drop Shelf"
+    case clipboard = "Clipboard History"
+    case apps = "App Dock"
+    case palette = "Command Palette"
 
     public var id: String { rawValue }
 
     public var symbolName: String {
         switch self {
+        case .home: return "square.grid.2x2.fill"
         case .aiUsage: return "sparkles"
         case .timer: return "timer"
         case .shelf: return "tray.and.arrow.down.fill"
+        case .clipboard: return "doc.on.clipboard.fill"
+        case .apps: return "square.grid.3x3.fill"
+        case .palette: return "command"
         }
+    }
+
+    /// Tabs displayed as symbol-only pills on the left of the camera cutout
+    public static var primaryLeftTabs: [NotchTab] {
+        [.home, .aiUsage, .timer, .shelf, .clipboard, .apps]
     }
 }
 
@@ -37,14 +66,14 @@ public final class NotchViewModel: ObservableObject {
     private static let menuBarIconStorageKey = "com.notchhub.menubar.enabled"
     private static let compactWingsStorageKey = "com.notchhub.compactwings.enabled"
     private static let notchDisplayModeStorageKey = "com.notchhub.display.mode"
+    private static let idlePillPresetStorageKey = "com.notchhub.idlepill.preset"
 
     @Published public private(set) var expansionState: NotchExpansionState = .compactWings
-    @Published public var selectedTab: NotchTab = .aiUsage
+    @Published public var selectedTab: NotchTab = .home
     @Published public var notchDisplayMode: NotchDisplayMode {
         didSet {
             UserDefaults.standard.set(notchDisplayMode.rawValue, forKey: Self.notchDisplayModeStorageKey)
             if notchDisplayMode == .completelyOff {
-                // Ensure the Menu Bar Icon is enabled so the user can always turn the Notch back on
                 if !isMenuBarIconEnabled {
                     isMenuBarIconEnabled = true
                 }
@@ -54,6 +83,11 @@ public final class NotchViewModel: ObservableObject {
                     expansionState = restingState
                 }
             }
+        }
+    }
+    @Published public var idlePillPreset: IdlePillWidthPreset {
+        didSet {
+            UserDefaults.standard.set(idlePillPreset.rawValue, forKey: Self.idlePillPresetStorageKey)
         }
     }
     @Published public var isCompactWingsEnabled: Bool {
@@ -79,6 +113,9 @@ public final class NotchViewModel: ObservableObject {
     public let geometryManager: ScreenGeometryManager
     public let aiUsageViewModel: AIUsageViewModel
     public let shelfViewModel: ShelfViewModel
+    public let clipboardViewModel: ClipboardViewModel
+    public let appLauncherViewModel: AppLauncherViewModel
+    public let commandPaletteViewModel: CommandPaletteViewModel
     public let utilitiesViewModel: UtilitiesViewModel
 
     private var hoverExpandTask: Task<Void, Never>?
@@ -89,22 +126,33 @@ public final class NotchViewModel: ObservableObject {
         geometryManager: ScreenGeometryManager = ScreenGeometryManager(),
         aiUsageViewModel: AIUsageViewModel = AIUsageViewModel(),
         shelfViewModel: ShelfViewModel = ShelfViewModel(),
+        clipboardViewModel: ClipboardViewModel = ClipboardViewModel(),
+        appLauncherViewModel: AppLauncherViewModel = AppLauncherViewModel(),
+        commandPaletteViewModel: CommandPaletteViewModel = CommandPaletteViewModel(),
         utilitiesViewModel: UtilitiesViewModel = UtilitiesViewModel()
     ) {
         self.geometryManager = geometryManager
         self.aiUsageViewModel = aiUsageViewModel
         self.shelfViewModel = shelfViewModel
+        self.clipboardViewModel = clipboardViewModel
+        self.appLauncherViewModel = appLauncherViewModel
+        self.commandPaletteViewModel = commandPaletteViewModel
         self.utilitiesViewModel = utilitiesViewModel
 
         let savedWings = UserDefaults.standard.object(forKey: Self.compactWingsStorageKey) as? Bool ?? true
         let savedMenuBar = UserDefaults.standard.object(forKey: Self.menuBarIconStorageKey) as? Bool ?? true
         let savedModeRaw = UserDefaults.standard.string(forKey: Self.notchDisplayModeStorageKey) ?? NotchDisplayMode.always.rawValue
         let savedMode = NotchDisplayMode(rawValue: savedModeRaw) ?? .always
+        let savedPresetRaw = UserDefaults.standard.string(forKey: Self.idlePillPresetStorageKey) ?? IdlePillWidthPreset.standard.rawValue
+        let savedPreset = IdlePillWidthPreset(rawValue: savedPresetRaw) ?? .standard
 
         self.isCompactWingsEnabled = savedWings
         self.isMenuBarIconEnabled = savedMenuBar
         self.notchDisplayMode = savedMode
+        self.idlePillPreset = savedPreset
         self.expansionState = (savedMode == .always && savedWings) ? .compactWings : .collapsed
+
+        self.commandPaletteViewModel.notch = self
 
         geometryManager.objectWillChange
             .sink { [weak self] _ in
@@ -120,7 +168,6 @@ public final class NotchViewModel: ObservableObject {
         return isCompactWingsEnabled ? .compactWings : .collapsed
     }
 
-    /// True when the notch visual background & contents should be hidden (0% opacity) because it is not in use.
     public var isHiddenWhenIdle: Bool {
         switch notchDisplayMode {
         case .always:
@@ -160,15 +207,14 @@ public final class NotchViewModel: ObservableObject {
         case .collapsed:
             return CGSize(width: base.width + (topEarRadius * 2.0), height: base.height)
         case .compactWings:
-            let wingsExtraWidth: CGFloat = 148.0
             return CGSize(
-                width: base.width + wingsExtraWidth + (topEarRadius * 2.0),
+                width: base.width + idlePillPreset.extraWingsWidth + (topEarRadius * 2.0),
                 height: max(base.height, 34.0)
             )
         case .expanded:
             return CGSize(
-                width: max(540.0, base.width + 340.0) + (topEarRadius * 2.0),
-                height: 256.0
+                width: max(560.0, base.width + 360.0) + (topEarRadius * 2.0),
+                height: 258.0
             )
         }
     }
@@ -271,6 +317,15 @@ public final class NotchViewModel: ObservableObject {
         let point = NSEvent.mouseLocation
         if !NSMouseInRect(point, activeInteractiveScreenRect(), false) {
             scheduleExitCollapse()
+        }
+    }
+
+    public func toggleCommandPalette() {
+        if expansionState == .expanded && selectedTab == .palette {
+            collapseImmediately()
+        } else {
+            expandImmediately(to: .palette)
+            commandPaletteViewModel.requestFocus()
         }
     }
 

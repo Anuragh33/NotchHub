@@ -4,10 +4,10 @@
 
 ---
 
-## Download & Install (Latest Release: v1.3.0)
+## Download & Install (Latest Release: v1.4.0)
 
-1. Download **`NotchHub-v1.3.0-macOS.dmg`** (or **`NotchHub-v1.3.0-macOS.zip`**) from the [Latest GitHub Release](https://github.com/Anuragh33/NotchHub/releases/latest).
-2. Open `NotchHub-v1.3.0-macOS.dmg` and drag **`NotchHub.app`** into your **`Applications`** folder.
+1. Download **`NotchHub-v1.4.0-macOS.dmg`** (or **`NotchHub-v1.4.0-macOS.zip`**) from the [Latest GitHub Release](https://github.com/Anuragh33/NotchHub/releases/latest).
+2. Open `NotchHub-v1.4.0-macOS.dmg` and drag **`NotchHub.app`** into your **`Applications`** folder.
 3. Since the app is ad-hoc signed without an Apple Developer ID certificate, remove the quarantine attribute on first launch or right-click → **Open**:
    ```bash
    xattr -cr /Applications/NotchHub.app
@@ -17,6 +17,17 @@
 ---
 
 ## Features
+
+- **Bento Home Dashboard (`NotchTab.home`)**:
+  - Multi-tile glass-bento overview inside the expanded notch combining a live **AI Quotas Matrix**, an interactive **Pomodoro Focus Ring**, **Drop Shelf** counter, and **Clipboard History** preview.
+- **Global Command Palette (`⌃⌥K`)**:
+  - Press `⌃⌥K` from anywhere on macOS (or click the `⌘K` pill in the bottom bar) to search and trigger any NotchHub action or launch installed macOS applications.
+- **Password-Safe Clipboard History Shelf (`NotchTab.clipboard`)**:
+  - Automatically captures copied text, links, and images for 1-click reuse while filtering out concealed/transient entries from password managers.
+- **Pinned App Launcher Dock (`NotchTab.apps`)**:
+  - Pin your favorite macOS applications inside the notch for instant 1-click launching across full-screen spaces.
+- **Resizable Idle Pill (`Compact` / `Standard` / `Wide`)**:
+  - Customize the idle wings width inside Settings to fit 13-inch, 14-inch, or external displays.
 
 - **Notch Display: Always / Off When Not in Use / Completely Off**:
   - In **Settings (`gearshape.fill`)** or the **Menu Bar Dropdown**, toggle between **Always Display Notch**, **Off When Not in Use (Hover Only)** (where the notch stays 100% invisible when idle and only materializes when you hover at the top center or drag a file), and **Completely Off (Menu Bar Only)**.
