@@ -59,10 +59,19 @@ public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Tabs displayed as symbol-only pills on the left of the camera cutout
-    public static var primaryLeftTabs: [NotchTab] {
-        [.home, .media, .aiUsage, .timer, .shelf, .clipboard, .apps, .mirror]
+    /// Tabs displayed on the left of the physical camera cutout
+    public static var leftTabs: [NotchTab] {
+        [.home, .media, .aiUsage, .timer]
     }
+
+    /// Tabs displayed on the right of the physical camera cutout
+    public static var rightTabs: [NotchTab] {
+        [.shelf, .clipboard, .apps, .mirror]
+    }
+
+    /// Legacy aliases
+    public static var primaryLeftTabs: [NotchTab] { leftTabs }
+    public static var primaryRightTabs: [NotchTab] { rightTabs }
 }
 
 public struct NotchBanner: Equatable, Identifiable, Sendable {
@@ -267,8 +276,8 @@ public final class NotchViewModel: ObservableObject {
             )
         case .expanded:
             return CGSize(
-                width: max(560.0, base.width + 360.0) + (topEarRadius * 2.0),
-                height: 258.0
+                width: max(600.0, base.width + 380.0) + (topEarRadius * 2.0),
+                height: 260.0
             )
         }
     }

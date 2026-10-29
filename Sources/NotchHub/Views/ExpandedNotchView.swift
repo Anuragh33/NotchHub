@@ -11,37 +11,29 @@ public struct ExpandedNotchView: View {
         let notchGeo = viewModel.geometryManager.currentGeometry
 
         VStack(spacing: 6) {
-            // Top bar flanking the physical camera housing
+            // Top bar flanking the physical camera housing on either side
             HStack(spacing: 0) {
-                // Left of camera housing: Symbol-only Tab Switcher
-                HStack(spacing: 5) {
-                    ForEach(NotchTab.primaryLeftTabs) { tab in
-                        Button(action: {
-                            withAnimation(NotchViewModel.springAnimation) {
-                                viewModel.selectTab(tab)
-                            }
-                        }) {
-                            Image(systemName: tab.symbolName)
-                                .font(.system(size: 11.5, weight: .semibold))
-                                .foregroundStyle(viewModel.selectedTab == tab ? .black : .white.opacity(0.78))
-                                .frame(width: 25, height: 22)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(viewModel.selectedTab == tab ? Color.white : Color.white.opacity(0.10))
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .help(tab.rawValue)
+                // Left wing: Left tabs (Home, Media, AI, Timer)
+                HStack(spacing: 6) {
+                    ForEach(NotchTab.leftTabs) { tab in
+                        tabPillButton(for: tab)
                     }
                 }
-                .padding(.leading, 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 12)
 
                 // Center gap reserved for physical camera housing
-                Spacer(minLength: notchGeo.notchSize.width)
+                Color.clear
+                    .frame(width: notchGeo.notchSize.width, height: max(32.0, notchGeo.notchSize.height))
 
-                // Right of camera housing: Clean wing (Menu Icon & Wings toggles live inside Settings)
-                Spacer()
-                    .frame(maxWidth: .infinity)
+                // Right wing: Right tabs (Shelf, Clipboard, Apps, Mirror)
+                HStack(spacing: 6) {
+                    ForEach(NotchTab.rightTabs) { tab in
+                        tabPillButton(for: tab)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 12)
             }
             .frame(height: max(32.0, notchGeo.notchSize.height))
 
@@ -92,5 +84,25 @@ public struct ExpandedNotchView: View {
                 notchViewModel: viewModel
             )
         }
+    }
+
+    @ViewBuilder
+    private func tabPillButton(for tab: NotchTab) -> some View {
+        Button(action: {
+            withAnimation(NotchViewModel.springAnimation) {
+                viewModel.selectTab(tab)
+            }
+        }) {
+            Image(systemName: tab.symbolName)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(viewModel.selectedTab == tab ? Color.black : Color.white.opacity(0.80))
+                .frame(width: 27, height: 23)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(viewModel.selectedTab == tab ? Color.white : Color.white.opacity(0.12))
+                )
+        }
+        .buttonStyle(.plain)
+        .help(tab.rawValue)
     }
 }
