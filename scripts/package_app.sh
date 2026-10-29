@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="NotchHub"
-VERSION="1.4.0"
+VERSION="1.5.0"
 BUNDLE_ID="com.anuragh33.NotchHub"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
@@ -128,6 +128,10 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" <<EOF
     <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>NotchHub uses AppleEvents to display and control Now Playing tracks in Apple Music and Spotify.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>NotchHub uses the MacBook camera for the instant notch camera mirror preview.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>NotchHub displays live audio input levels in the camera mirror preview.</string>
 </dict>
 </plist>
 EOF

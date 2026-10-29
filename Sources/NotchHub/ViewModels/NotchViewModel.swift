@@ -34,11 +34,13 @@ public enum IdlePillWidthPreset: String, CaseIterable, Identifiable, Sendable {
 
 public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
     case home = "Bento Home"
+    case media = "Now Playing"
     case aiUsage = "AI Usage"
     case timer = "Pomodoro Timer"
     case shelf = "Drop Shelf"
     case clipboard = "Clipboard History"
     case apps = "App Dock"
+    case mirror = "Camera Mirror"
     case palette = "Command Palette"
 
     public var id: String { rawValue }
@@ -46,18 +48,36 @@ public enum NotchTab: String, CaseIterable, Identifiable, Sendable {
     public var symbolName: String {
         switch self {
         case .home: return "square.grid.2x2.fill"
+        case .media: return "music.note"
         case .aiUsage: return "sparkles"
         case .timer: return "timer"
         case .shelf: return "tray.and.arrow.down.fill"
         case .clipboard: return "doc.on.clipboard.fill"
         case .apps: return "square.grid.3x3.fill"
+        case .mirror: return "camera.fill"
         case .palette: return "command"
         }
     }
 
     /// Tabs displayed as symbol-only pills on the left of the camera cutout
     public static var primaryLeftTabs: [NotchTab] {
-        [.home, .aiUsage, .timer, .shelf, .clipboard, .apps]
+        [.home, .media, .aiUsage, .timer, .shelf, .clipboard, .apps, .mirror]
+    }
+}
+
+public struct NotchBanner: Equatable, Identifiable, Sendable {
+    public let id: String
+    public let icon: String
+    public let title: String
+    public let subtitle: String
+    public let accentColorName: String
+
+    public init(id: String = UUID().uuidString, icon: String, title: String, subtitle: String, accentColorName: String = "green") {
+        self.id = id
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.accentColorName = accentColorName
     }
 }
 
@@ -107,6 +127,7 @@ public final class NotchViewModel: ObservableObject {
     }
     @Published public var isHoveringNotch: Bool = false
     @Published public var isDraggingOverScreenTop: Bool = false
+    @Published public private(set) var activeBanner: NotchBanner?
 
     public static let springAnimation: Animation = .spring(response: 0.35, dampingFraction: 0.78)
 
@@ -117,6 +138,12 @@ public final class NotchViewModel: ObservableObject {
     public let appLauncherViewModel: AppLauncherViewModel
     public let commandPaletteViewModel: CommandPaletteViewModel
     public let utilitiesViewModel: UtilitiesViewModel
+    public let mediaService: MediaService = .shared
+    public let batteryService: BatteryService = .shared
+    public let bluetoothService: BluetoothDeviceService = .shared
+    public let cameraService: CameraMirrorService = .shared
+
+    private var bannerDismissTask: Task<Void, Never>?
 
     private var hoverExpandTask: Task<Void, Never>?
     private var exitCollapseTask: Task<Void, Never>?
@@ -153,6 +180,33 @@ public final class NotchViewModel: ObservableObject {
         self.expansionState = (savedMode == .always && savedWings) ? .compactWings : .collapsed
 
         self.commandPaletteViewModel.notch = self
+
+        batteryService.onChargingConnected = { [weak self] pct in
+            self?.showBanner(NotchBanner(
+                icon: "bolt.fill",
+                title: "MagSafe Connected",
+                subtitle: "\(pct)% • Charging",
+                accentColorName: "green"
+            ))
+        }
+
+        batteryService.onChargingDisconnected = { [weak self] pct in
+            self?.showBanner(NotchBanner(
+                icon: "powerplug",
+                title: "On Battery Power",
+                subtitle: "\(pct)% remaining",
+                accentColorName: "orange"
+            ))
+        }
+
+        bluetoothService.onDeviceConnected = { [weak self] dev in
+            self?.showBanner(NotchBanner(
+                icon: dev.iconName,
+                title: dev.name,
+                subtitle: dev.isAirPods ? "AirPods Connected" : "Connected",
+                accentColorName: "blue"
+            ))
+        }
 
         geometryManager.objectWillChange
             .sink { [weak self] _ in
@@ -354,6 +408,35 @@ public final class NotchViewModel: ObservableObject {
         isMenuBarIconEnabled.toggle()
     }
 
+    public func selectTab(_ tab: NotchTab) {
+        if selectedTab == .mirror && tab != .mirror {
+            cameraService.stopSession()
+        } else if tab == .mirror {
+            cameraService.startSession()
+        }
+        selectedTab = tab
+    }
+
+    public func showBanner(_ banner: NotchBanner, duration: TimeInterval = 3.5) {
+        bannerDismissTask?.cancel()
+        withAnimation(Self.springAnimation) {
+            self.activeBanner = banner
+            if self.expansionState == .collapsed {
+                self.expansionState = .compactWings
+            }
+        }
+        bannerDismissTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            guard let self, !Task.isCancelled else { return }
+            withAnimation(Self.springAnimation) {
+                self.activeBanner = nil
+                if self.expansionState != .expanded {
+                    self.expansionState = self.restingState
+                }
+            }
+        }
+    }
+
     public func expandImmediately(to tab: NotchTab? = nil) {
         if notchDisplayMode == .completelyOff {
             notchDisplayMode = .offWhenIdle
@@ -362,7 +445,7 @@ public final class NotchViewModel: ObservableObject {
         cancelCollapseTimer()
         withAnimation(Self.springAnimation) {
             if let tab {
-                selectedTab = tab
+                selectTab(tab)
             }
             expansionState = .expanded
         }
@@ -371,6 +454,9 @@ public final class NotchViewModel: ObservableObject {
     public func collapseImmediately() {
         cancelHoverExpansion()
         cancelCollapseTimer()
+        if selectedTab == .mirror {
+            cameraService.stopSession()
+        }
         withAnimation(Self.springAnimation) {
             expansionState = restingState
         }
@@ -400,6 +486,9 @@ public final class NotchViewModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled, let self, !self.isHoveringNotch, !self.isDraggingOverScreenTop else { return }
             withAnimation(Self.springAnimation) {
+                if self.selectedTab == .mirror {
+                    self.cameraService.stopSession()
+                }
                 self.expansionState = self.restingState
             }
         }

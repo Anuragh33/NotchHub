@@ -43,8 +43,7 @@ public struct NotchContainerView: View {
 
                     case .compactWings:
                         CompactWingsView(
-                            aiUsageViewModel: viewModel.aiUsageViewModel,
-                            utilitiesViewModel: viewModel.utilitiesViewModel,
+                            viewModel: viewModel,
                             hardwareNotchWidth: viewModel.geometryManager.currentGeometry.notchSize.width
                         )
                         .padding(.horizontal, topR)

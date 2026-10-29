@@ -93,10 +93,48 @@ public struct QuickUtilitiesBar: View {
                     )
             )
 
-            // 3. Command Palette Trigger (⌃⌥K)
+            // 3. Media Quick Launcher
             Button(action: {
                 withAnimation(NotchViewModel.springAnimation) {
-                    notchViewModel.selectedTab = (notchViewModel.selectedTab == .palette) ? .home : .palette
+                    notchViewModel.selectTab(notchViewModel.selectedTab == .media ? .home : .media)
+                }
+            }) {
+                Image(systemName: "music.note")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(notchViewModel.selectedTab == .media ? .black : (notchViewModel.mediaService.currentTrack.isPlaying ? Color.green : Color.white.opacity(0.85)))
+                    .padding(.horizontal, 7)
+                    .frame(height: 26)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(notchViewModel.selectedTab == .media ? Color.green : Color.white.opacity(0.10))
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("Now Playing Music & Media")
+
+            // 4. Camera Mirror Quick Launcher
+            Button(action: {
+                withAnimation(NotchViewModel.springAnimation) {
+                    notchViewModel.selectTab(notchViewModel.selectedTab == .mirror ? .home : .mirror)
+                }
+            }) {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundStyle(notchViewModel.selectedTab == .mirror ? .black : Color.white.opacity(0.85))
+                    .padding(.horizontal, 7)
+                    .frame(height: 26)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(notchViewModel.selectedTab == .mirror ? Color.white : Color.white.opacity(0.10))
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("Instant Notch Camera Mirror")
+
+            // 5. Command Palette Trigger (⌃⌥K)
+            Button(action: {
+                withAnimation(NotchViewModel.springAnimation) {
+                    notchViewModel.selectTab(notchViewModel.selectedTab == .palette ? .home : .palette)
                 }
             }) {
                 HStack(spacing: 3) {

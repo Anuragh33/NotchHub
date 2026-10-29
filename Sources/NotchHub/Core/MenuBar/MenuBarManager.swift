@@ -75,6 +75,16 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
         openHome.image = NSImage(systemSymbolName: "square.grid.2x2.fill", accessibilityDescription: nil)
         menu.addItem(openHome)
 
+        let openMedia = NSMenuItem(title: "Open Now Playing Music", action: #selector(openMediaTab), keyEquivalent: "m")
+        openMedia.target = self
+        openMedia.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)
+        menu.addItem(openMedia)
+
+        let openMirror = NSMenuItem(title: "Open Camera Mirror", action: #selector(openMirrorTab), keyEquivalent: "c")
+        openMirror.target = self
+        openMirror.image = NSImage(systemSymbolName: "camera.fill", accessibilityDescription: nil)
+        menu.addItem(openMirror)
+
         let openAI = NSMenuItem(title: "Open AI Subscription Quotas", action: #selector(openAITab), keyEquivalent: "2")
         openAI.target = self
         openAI.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil)
@@ -180,6 +190,14 @@ public final class MenuBarManager: NSObject, NSMenuDelegate {
 
     @objc private func openHomeTab() {
         notchViewModel.expandImmediately(to: .home)
+    }
+
+    @objc private func openMediaTab() {
+        notchViewModel.expandImmediately(to: .media)
+    }
+
+    @objc private func openMirrorTab() {
+        notchViewModel.expandImmediately(to: .mirror)
     }
 
     @objc private func openAITab() {

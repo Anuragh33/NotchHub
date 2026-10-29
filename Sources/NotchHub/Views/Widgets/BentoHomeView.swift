@@ -157,48 +157,88 @@ public struct BentoHomeView: View {
                     )
             )
 
-            // Bento Card 3: Stacked Shelf + Clipboard Quick Tiles
+            // Bento Card 3: Stacked Media / Shelf + Clipboard Quick Tiles
             VStack(spacing: 8) {
-                // Top Mini Tile: Drop Shelf
-                Button(action: {
-                    withAnimation(NotchViewModel.springAnimation) {
-                        notchViewModel.selectedTab = .shelf
-                    }
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "tray.and.arrow.down.fill")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.cyan)
-                            .frame(width: 26, height: 26)
-                            .background(Circle().fill(Color.cyan.opacity(0.16)))
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("Drop Shelf")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                            Text("\(shelfViewModel.items.count) held items")
-                                .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.58))
+                if notchViewModel.mediaService.currentTrack.isPlaying {
+                    // Top Mini Tile: Now Playing Music
+                    Button(action: {
+                        withAnimation(NotchViewModel.springAnimation) {
+                            notchViewModel.selectTab(.media)
                         }
-                        Spacer()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.green)
+                                .frame(width: 26, height: 26)
+                                .background(Circle().fill(Color.green.opacity(0.18)))
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(notchViewModel.mediaService.currentTrack.title)
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                Text(notchViewModel.mediaService.currentTrack.artist.isEmpty ? "Now Playing" : notchViewModel.mediaService.currentTrack.artist)
+                                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.58))
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.white.opacity(0.07))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color.green.opacity(0.25), lineWidth: 0.7)
+                                )
+                        )
                     }
-                    .padding(.horizontal, 10)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.white.opacity(0.07))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(Color.white.opacity(0.11), lineWidth: 0.7)
-                            )
-                    )
+                    .buttonStyle(.plain)
+                } else {
+                    // Top Mini Tile: Drop Shelf
+                    Button(action: {
+                        withAnimation(NotchViewModel.springAnimation) {
+                            notchViewModel.selectTab(.shelf)
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "tray.and.arrow.down.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.cyan)
+                                .frame(width: 26, height: 26)
+                                .background(Circle().fill(Color.cyan.opacity(0.16)))
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Drop Shelf")
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                Text("\(shelfViewModel.items.count) held items")
+                                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.58))
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.white.opacity(0.07))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color.white.opacity(0.11), lineWidth: 0.7)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 // Bottom Mini Tile: Clipboard History
                 Button(action: {
                     withAnimation(NotchViewModel.springAnimation) {
-                        notchViewModel.selectedTab = .clipboard
+                        notchViewModel.selectTab(.clipboard)
                     }
                 }) {
                     HStack(spacing: 8) {

@@ -20,6 +20,9 @@ let package = Package(
                 .linkedFramework("UniformTypeIdentifiers"),
                 .linkedFramework("WebKit"),
                 .linkedFramework("Carbon"),
+                .linkedFramework("AVFoundation"),
+                .linkedFramework("IOKit"),
+                .linkedFramework("IOBluetooth"),
                 .linkedLibrary("sqlite3")
             ]
         )

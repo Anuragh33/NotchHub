@@ -98,6 +98,20 @@ public final class CommandPaletteViewModel: ObservableObject {
             timer.selectPhase(.shortBreak); timer.startTimer(); notch.expandImmediately(to: .timer)
         }
         add("Open Home", "Dashboard", "square.grid.2x2.fill") { notch.expandImmediately(to: .home) }
+        add("Open Now Playing", "Music & media player", "music.note") { notch.expandImmediately(to: .media) }
+        add("Play / Pause Music", "Now Playing", "playpause.fill") { notch.mediaService.togglePlayPause() }
+        add("Next Track", "Now Playing", "forward.fill") { notch.mediaService.nextTrack() }
+        add("Previous Track", "Now Playing", "backward.fill") { notch.mediaService.previousTrack() }
+        add("Open Camera Mirror", "Instant meeting check", "camera.fill") { notch.expandImmediately(to: .mirror) }
+        add("Check Battery & MagSafe", "Power HUD", "bolt.badge.checkmark.fill") {
+            let batt = notch.batteryService.currentState
+            notch.showBanner(NotchBanner(
+                icon: batt.batterySymbol,
+                title: batt.isCharging ? "MagSafe Charging" : "Battery Status",
+                subtitle: "\(batt.percentage)% • \(batt.isACConnected ? "AC Power" : "On Battery")",
+                accentColorName: batt.isCharging ? "green" : (batt.percentage <= 20 ? "red" : "blue")
+            ))
+        }
         add("Open AI Usage", "Quotas", "sparkles") { notch.expandImmediately(to: .aiUsage) }
         add("Open Drop Shelf", "Files", "tray.and.arrow.down.fill") { notch.expandImmediately(to: .shelf) }
         add("Open Clipboard History", "Clipboard", "doc.on.clipboard.fill") { notch.expandImmediately(to: .clipboard) }

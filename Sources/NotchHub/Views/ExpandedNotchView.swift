@@ -18,7 +18,7 @@ public struct ExpandedNotchView: View {
                     ForEach(NotchTab.primaryLeftTabs) { tab in
                         Button(action: {
                             withAnimation(NotchViewModel.springAnimation) {
-                                viewModel.selectedTab = tab
+                                viewModel.selectTab(tab)
                             }
                         }) {
                             Image(systemName: tab.symbolName)
@@ -51,6 +51,9 @@ public struct ExpandedNotchView: View {
                 case .home:
                     BentoHomeView(notchViewModel: viewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                case .media:
+                    NowPlayingView()
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                 case .aiUsage:
                     AIUsageView(viewModel: viewModel.aiUsageViewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
@@ -69,6 +72,9 @@ public struct ExpandedNotchView: View {
                         onLaunched: { viewModel.collapseImmediately() }
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                case .mirror:
+                    CameraMirrorView()
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                 case .palette:
                     CommandPaletteView(viewModel: viewModel.commandPaletteViewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
