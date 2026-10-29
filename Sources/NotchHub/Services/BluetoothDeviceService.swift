@@ -41,16 +41,20 @@ public final class BluetoothDeviceService: ObservableObject {
         )
     }
 
-    @objc private func deviceConnectedNotification(_ notification: Any?, device: IOBluetoothDevice?) {
+    @objc nonisolated private func deviceConnectedNotification(_ notification: Any?, device: IOBluetoothDevice?) {
         guard let device else { return }
+        let name = device.nameOrAddress
+        let address = device.addressString ?? name
+        let isAudio = (device.deviceClassMajor == 0x04)
+
         Task { @MainActor [weak self] in
             self?.refreshConnectedDevices()
-            if let name = device.nameOrAddress {
+            if let name {
                 let isAirPods = name.localizedCaseInsensitiveContains("airpods")
                 let item = ConnectedBluetoothDevice(
-                    id: device.addressString ?? name,
+                    id: address ?? name,
                     name: name,
-                    isAudioDevice: device.deviceClassMajor == 0x04,
+                    isAudioDevice: isAudio,
                     isAirPods: isAirPods,
                     batteryPercentage: nil
                 )

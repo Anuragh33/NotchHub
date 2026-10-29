@@ -4,10 +4,10 @@
 
 ---
 
-## Download & Install (Latest Release: v1.5.0)
+## Download & Install (Latest Release: v1.5.1)
 
-1. Download **`NotchHub-v1.5.0-macOS.dmg`** (or **`NotchHub-v1.5.0-macOS.zip`**) from the [Latest GitHub Release](https://github.com/Anuragh33/NotchHub/releases/latest).
-2. Open `NotchHub-v1.5.0-macOS.dmg` and drag **`NotchHub.app`** into your **`Applications`** folder.
+1. Download **`NotchHub-v1.5.1-macOS.dmg`** (or **`NotchHub-v1.5.1-macOS.zip`**) from the [Latest GitHub Release](https://github.com/Anuragh33/NotchHub/releases/latest).
+2. Open `NotchHub-v1.5.1-macOS.dmg` and drag **`NotchHub.app`** into your **`Applications`** folder.
 3. Since the app is ad-hoc signed without an Apple Developer ID certificate, remove the quarantine attribute on first launch or right-click → **Open**:
    ```bash
    xattr -cr /Applications/NotchHub.app

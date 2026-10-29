@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="NotchHub"
-VERSION="1.5.0"
+VERSION="1.5.1"
 BUNDLE_ID="com.anuragh33.NotchHub"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
@@ -132,6 +132,8 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" <<EOF
     <string>NotchHub uses the MacBook camera for the instant notch camera mirror preview.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>NotchHub displays live audio input levels in the camera mirror preview.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>NotchHub displays battery and connection status for connected Bluetooth audio and AirPods.</string>
 </dict>
 </plist>
 EOF
